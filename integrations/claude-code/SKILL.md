@@ -1,0 +1,58 @@
+---
+name: task-spec
+description: |
+  Author and gate atomic, self-verifying task-specs via the taskspec CLI. Use
+  when the user says "create a task", "scaffold a task", "make this executable",
+  "decompose this into work", "turn this into a backlog", "convert this legacy
+  task", or mentions Task-Spec, EDD, or eval-driven development. Produces
+  T-*.md specs with runnable bash evals + a behavior-to-eval traceability chain
+  + a post-execution acceptance gate that any conformant engine can crank.
+  Best for atomic leaves with machine-checkable done-conditions; L uses a
+  configured long-horizon backend and XL/XXL are composition nodes.
+metadata:
+  version: "3.7.0"
+---
+
+# task-spec (thin skill)
+
+This is a **thin delegating skill**: the doctrine lives in the task-spec engine
+repo, the mechanics live in the `taskspec` CLI. The skill's job is to (a) fire
+on authoring intent and (b) point the agent at the right commands.
+
+## Prerequisites
+
+The `taskspec` CLI on PATH (`taskspec doctor` must PASS). If it is missing,
+clone the engine repo and symlink `bin/taskspec` onto PATH — see the repo
+README.
+
+## What to do
+
+1. **Read the authoring doctrine** — `docs/authoring-workflow.md` in the
+   task-spec engine repo (the 9-phase loop: understand → research → scan →
+   architect → compose → validate → gate → dispatch → accept). It is the
+   normative workflow; this skill only routes to it.
+2. **Drive the CLI**, never hand-edit envelope fields:
+
+   | Intent | Command |
+   |--------|---------|
+   | Scaffold a spec | `taskspec new <slug> <effort> [agent] [source_note]` |
+   | Bulk scaffold | `taskspec batch --intent-file <f> --effort S\|M` |
+   | Structural lint | `taskspec validate [--shellcheck-evals] <spec>` |
+   | PRE-gate + sign off | `taskspec gate --stamp <spec>` |
+   | Run evals (JSON) | `taskspec run --ci <spec>` |
+   | POST-gate accept | `taskspec accept --stamp [--gold-sanity] <spec>` |
+   | Opt-in evidence task | `taskspec new --format 4 <slug> <effort>` then `taskspec author-doctor <spec>` |
+
+3. **Respect the effort gate**: XS/S/M/L are runnable leaves; L needs a backend
+   from `TASKSPEC_LONG_HORIZON_BACKENDS`. XL/XXL are non-runnable nodes with at
+   least two/three child Task-Specs.
+
+## Hard rules
+
+- `signed_off: true` comes ONLY from `taskspec gate --stamp`. Never hand-stamp
+  the envelope; hand-stamping is rejected by the sign-off envelope check.
+- A task is DONE only when `taskspec accept` emits `ACCEPTED=1` — an agent's
+  own claim of GREEN is not evidence.
+- Format v4 acceptance must receive every policy-required external receipt;
+  never expose a private holdout bundle to the executor.
+- Exit codes: `0` pass/accept · `1` failed/rejected · `2` usage error.
